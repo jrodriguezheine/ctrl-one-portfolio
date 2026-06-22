@@ -593,7 +593,9 @@ function updateCarouselFront() {
 
     // Show cards within ±45° (distance < 2 steps); hide edge-on cards at
     // exactly 90° / 270° — they appear as thin lines and are unclickable.
-    card.style.opacity = angularDist < N / 4 ? '1' : '0';
+    const visible = angularDist < N / 4;
+    card.style.opacity = visible ? '1' : '0';
+    card.style.pointerEvents = visible ? '' : 'none';
 
     if (!front) {
       const v = card.querySelector('video');

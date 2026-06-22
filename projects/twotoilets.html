@@ -1039,12 +1039,17 @@ function updateProjFront() {
     card.classList.toggle('is-front', front);
     const diff = ((i - projIdx) % PROJ_N + PROJ_N) % PROJ_N;
     const dist = diff > PROJ_N / 2 ? PROJ_N - diff : diff;
-    card.style.opacity = dist < PROJ_N / 4 ? '1' : '0';
+    const visible = dist < PROJ_N / 4;
+    card.style.opacity = visible ? '1' : '0';
+    card.style.pointerEvents = visible ? '' : 'none';
     if (!front) {
       const v = card.querySelector('video');
       if (v) { v.pause(); v.currentTime = 0; }
       const ov = card.querySelector('.carousel-name-overlay');
       if (ov) ov.classList.remove('visible');
+    } else {
+      const v = card.querySelector('video');
+      if (v) v.play().catch(() => {});
     }
   });
 }
