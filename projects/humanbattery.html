@@ -1007,6 +1007,7 @@ function openProjects() {
   buildProjectCarousel();
   document.getElementById('projects-overlay').classList.add('open');
   document.getElementById('carousel-close').style.display = 'block';
+  document.querySelectorAll('.carousel-card video').forEach(v => v.play().catch(() => {}));
 }
 
 function closeProjects() {
