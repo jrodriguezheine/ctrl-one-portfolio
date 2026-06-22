@@ -557,6 +557,16 @@ function buildCarousel() {
     wheel.appendChild(card);
   });
 
+  // 2D click zone over the center card — bypasses CSS 3D hit-testing which
+  // makes cards at rotateX(90/270deg) unclickable even when face-on visually.
+  const clickZone = document.createElement('div');
+  clickZone.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:380px;height:240px;cursor:pointer;z-index:10;';
+  clickZone.addEventListener('click', () => {
+    const proj = PROJECTS[carouselIdx];
+    if (proj && proj.proyectoUrl && proj.proyectoUrl !== '#') window.location.href = proj.proyectoUrl;
+  });
+  document.getElementById('carousel-stage').appendChild(clickZone);
+
   // Hover detection via geometry — track last mouse position so we can
   // re-evaluate after a spin without needing the user to move the mouse.
   const stage = document.getElementById('carousel-stage');

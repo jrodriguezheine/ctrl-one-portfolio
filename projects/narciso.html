@@ -995,6 +995,15 @@ function buildProjectCarousel() {
   });
   document.getElementById('carousel-wheel').style.transform = `rotateX(${projRotation}deg)`;
 
+  const clickZone = document.createElement('div');
+  clickZone.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:380px;height:240px;cursor:pointer;z-index:10;';
+  clickZone.addEventListener('click', () => {
+    const proj = PROJECTS[projIdx];
+    if (proj && proj.proyectoUrl === null) { closeProjects(); return; }
+    if (proj && proj.proyectoUrl) window.location.href = proj.proyectoUrl;
+  });
+  document.getElementById('carousel-stage').appendChild(clickZone);
+
   const stage = document.getElementById('carousel-stage');
   let _frontHovered = false;
   function _setFrontHover(on) {
