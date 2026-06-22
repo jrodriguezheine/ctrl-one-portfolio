@@ -993,7 +993,6 @@ function buildProjectCarousel() {
       if (proj.proyectoUrl === null) { closeProjects(); return; }
       if (proj.proyectoUrl) window.location.href = proj.proyectoUrl;
     });
-    card.addEventListener('wheel', e => e.stopPropagation());
     wheel.appendChild(card);
   });
   document.getElementById('carousel-wheel').style.transform = `rotateX(${projRotation}deg)`;
