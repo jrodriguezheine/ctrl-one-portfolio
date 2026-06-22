@@ -1003,8 +1003,6 @@ function buildProjectCarousel() {
     card.appendChild(vid);
     card.appendChild(overlay);
 
-    card.addEventListener('mouseenter', () => { overlay.classList.add('visible'); });
-    card.addEventListener('mouseleave', () => { overlay.classList.remove('visible'); });
     card.addEventListener('click', () => {
       if (proj.proyectoUrl === null) { closeProjects(); return; }
       if (proj.proyectoUrl) window.location.href = proj.proyectoUrl;
@@ -1012,6 +1010,25 @@ function buildProjectCarousel() {
     wheel.appendChild(card);
   });
   document.getElementById('carousel-wheel').style.transform = `rotateX(${projRotation}deg)`;
+
+  const stage = document.getElementById('carousel-stage');
+  let _frontHovered = false;
+  function _setFrontHover(on) {
+    if (on === _frontHovered) return;
+    _frontHovered = on;
+    const front = document.querySelector('.carousel-card.is-front');
+    if (!front) return;
+    const ov = front.querySelector('.carousel-name-overlay');
+    if (on) ov.classList.add('visible');
+    else ov.classList.remove('visible');
+  }
+  stage.addEventListener('mousemove', (e) => {
+    const r = stage.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    _setFrontHover(Math.abs(e.clientX - cx) < 190 && Math.abs(e.clientY - cy) < 120);
+  });
+  stage.addEventListener('mouseleave', () => _setFrontHover(false));
+
   updateProjFront();
 }
 

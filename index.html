@@ -547,19 +547,6 @@ function buildCarousel() {
     card.appendChild(vid);
     card.appendChild(overlay);
 
-    // Hover: play video + show name overlay when this card is the front.
-    // Driven by JS (not CSS :hover) so 3D hit-test glitches for cards
-    // that start edge-on (90°/270°) don't cause the name to flicker.
-    card.addEventListener('mouseenter', () => {
-      if (!card.classList.contains('is-front')) return;
-      vid.play().catch(() => {});
-      overlay.classList.add('visible');
-    });
-    card.addEventListener('mouseleave', () => {
-      vid.pause(); vid.currentTime = 0;
-      overlay.classList.remove('visible');
-    });
-
     // Click → open project
     card.addEventListener('click', () => {
       if (proj.proyectoUrl && proj.proyectoUrl !== '#') {
@@ -569,6 +556,27 @@ function buildCarousel() {
 
     wheel.appendChild(card);
   });
+
+  // Hover detection via geometry instead of per-card mouse events,
+  // which are unreliable with CSS preserve-3d transforms.
+  const stage = document.getElementById('carousel-stage');
+  let _frontHovered = false;
+  function _setFrontHover(on) {
+    if (on === _frontHovered) return;
+    _frontHovered = on;
+    const front = document.querySelector('.carousel-card.is-front');
+    if (!front) return;
+    const v = front.querySelector('video');
+    const ov = front.querySelector('.carousel-name-overlay');
+    if (on) { v.play().catch(() => {}); ov.classList.add('visible'); }
+    else { v.pause(); v.currentTime = 0; ov.classList.remove('visible'); }
+  }
+  stage.addEventListener('mousemove', (e) => {
+    const r = stage.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    _setFrontHover(Math.abs(e.clientX - cx) < 190 && Math.abs(e.clientY - cy) < 120);
+  });
+  stage.addEventListener('mouseleave', () => _setFrontHover(false));
 
   updateCarouselFront();
 }
