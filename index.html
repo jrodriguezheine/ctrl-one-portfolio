@@ -607,7 +607,7 @@ function updateCarouselFront() {
     // exactly 90° / 270° — they appear as thin lines and are unclickable.
     const visible = angularDist < N / 4;
     card.style.opacity = visible ? '1' : '0';
-    card.style.pointerEvents = visible ? '' : 'none';
+    card.style.pointerEvents = front ? '' : 'none';
 
     const v = card.querySelector('video');
     if (front) {

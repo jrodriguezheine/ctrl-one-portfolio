@@ -1012,7 +1012,7 @@ function updateProjFront() {
     const dist = diff > PROJ_N / 2 ? PROJ_N - diff : diff;
     const visible = dist < PROJ_N / 4;
     card.style.opacity = visible ? '1' : '0';
-    card.style.pointerEvents = visible ? '' : 'none';
+    card.style.pointerEvents = front ? '' : 'none';
     if (!front) {
       const v = card.querySelector('video');
       if (v) { v.pause(); v.currentTime = 0; }
