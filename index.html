@@ -560,7 +560,7 @@ function buildCarousel() {
   // 2D click zone over the center card — bypasses CSS 3D hit-testing which
   // makes cards at rotateX(90/270deg) unclickable even when face-on visually.
   const clickZone = document.createElement('div');
-  clickZone.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:380px;height:240px;cursor:pointer;z-index:10;';
+  clickZone.id = 'carousel-click-zone'; clickZone.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:380px;height:240px;cursor:pointer;z-index:10;';
   clickZone.addEventListener('click', () => {
     const proj = PROJECTS[carouselIdx];
     if (proj && proj.proyectoUrl && proj.proyectoUrl !== '#') window.location.href = proj.proyectoUrl;
@@ -684,7 +684,7 @@ let lastSpin = 0;
 const SPIN_COOLDOWN = 650; // ms — matches CSS transition duration
 
 document.getElementById('projects-overlay').addEventListener('click', e => {
-  if (!e.target.closest('#carousel-stage')) closeProjects();
+  if (!e.target.closest('#carousel-click-zone') && !e.target.closest('#carousel-close')) closeProjects();
 });
 
 document.getElementById('projects-overlay').addEventListener('wheel', e => {
