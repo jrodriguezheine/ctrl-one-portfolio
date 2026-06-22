@@ -1,15 +1,3 @@
-# Python
-venv/
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.env
-
-# Django
-ctrl_one/
-db.sqlite3
-
 # System
 .DS_Store
 Thumbs.db
@@ -20,4 +8,4 @@ Thumbs.db
 *.code-workspace
 
 # Large generated files
-pages/Assets/Projects/**/*_data.js
+Assets/Projects/**/*_data.js

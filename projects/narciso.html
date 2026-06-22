@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ctrl One^ — Narciso</title>
+<style>
+
+/* ── FONTS ── */
+@font-face {
+  font-family: 'PPNeueMontreal';
+  src: url('../Assets/Fonts/pp-neue-montreal-cufonfonts copy/ppneuemontreal-book.otf') format('opentype');
+  font-weight: 400; font-style: normal;
+}
+@font-face {
+  font-family: 'PPNeueMontreal';
+  src: url('../Assets/Fonts/pp-neue-montreal-cufonfonts copy/ppneuemontreal-medium.otf') format('opentype');
+  font-weight: 500; font-style: normal;
+}
+@font-face {
+  font-family: 'PPNeueMontreal';
+  src: url('../Assets/Fonts/pp-neue-montreal-cufonfonts copy/ppneuemontreal-thin.otf') format('opentype');
+  font-weight: 100; font-style: normal;
+}
+@font-face {
+  font-family: 'PPNeueMontreal';
+  src: url('../Assets/Fonts/pp-neue-montreal-cufonfonts copy/ppneuemontreal-italic.otf') format('opentype');
+  font-weight: 400; font-style: italic;
+}
+@font-face {
+  font-family: 'ITCGaramond';
+  src: url('../Assets/Fonts/ITC Garamond Std copy/ITC Garamond Std Book/ITC Garamond Std Book.otf') format('opentype');
+  font-weight: 400; font-style: normal;
+}
+
+/* ── RESET ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 100vw; height: 100vh;
+  overflow: hidden;
+  background: #e8ebed;
+  cursor: grab;
+  font-family: 'PPNeueMontreal', 'Helvetica Neue', sans-serif;
+}
+body.dragging { cursor: grabbing; }
+
+/* ── CANVAS ── */
+#canvas {
+  position: absolute;
+  width: 4536px; height: 2946px;
+  top: 0; left: 0;
+  user-select: none;
+  background: #e8ebed;
+  background-image: url('../Assets/Projects/Narciso/00_Moodboard_Narciso.png');
+  background-size: 4536px 2946px;
+  background-repeat: no-repeat;
+  background-position: top left;
+  transform-origin: top left;
+}
+
+/* ── HOTSPOTS ── */
+.hotspot {
+  position: absolute;
+  cursor: pointer;
+  background: transparent;
+  /* background: rgba(255,0,0,0.15); outline:1px solid red; */ /* debug */
+}
+.hotspot-text { cursor: pointer; }
+.hotspot-text:hover::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 1px;
+  background: rgba(0,0,0,0.15);
+}
+
+/* ── VIDEO ITEMS ON CANVAS ── */
+.canvas-video-wrap {
+  position: absolute;
+  cursor: pointer;
+}
+.canvas-video-wrap video {
+  display: block;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* ── TOP NAV GRADIENT ── */
+#top-nav-gradient {
+  position: fixed; top: 0; left: 0; right: 0; height: 180px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 100%);
+  z-index: 101; pointer-events: none;
+}
+
+/* ── TOP NAV ── */
+#main-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 58px;
+  display: flex; align-items: center; justify-content: center; gap: 52px;
+  z-index: 102;
+  pointer-events: none;
+}
+.nav-btn {
+  background: none; border: none; cursor: pointer;
+  font-family: 'PPNeueMontreal', sans-serif;
+  font-size: 10px; font-weight: 400;
+  letter-spacing: 0.26em; text-transform: uppercase;
+  color: rgba(0,0,0,0.45);
+  padding: 8px 4px;
+  pointer-events: auto;
+  transition: color 0.2s;
+}
+.nav-btn:hover { color: rgba(0,0,0,0.85); }
+#nav-logo {
+  height: 38px; width: auto; display: block;
+  pointer-events: auto; cursor: pointer;
+  filter: invert(1) opacity(0.55);
+  transition: filter 0.2s;
+}
+#nav-logo:hover { filter: invert(1) opacity(0.9); }
+
+/* ── FIXED UI ── */
+#axis-h {
+  position: fixed; top: 196px; left: 0; right: 0;
+  height: 1px; background: rgba(0,0,0,0.07);
+  pointer-events: none; z-index: 90;
+}
+#axis-v {
+  position: fixed; top: 0; bottom: 0; left: 196px;
+  width: 1px; background: rgba(0,0,0,0.07);
+  pointer-events: none; z-index: 90;
+}
+
+/* Minimap */
+#minimap {
+  position: fixed; top: 24px; left: 24px;
+  width: 140px; height: 110px;
+  border: 1px solid rgba(0,0,0,0.18);
+  background: #111;
+  overflow: hidden; z-index: 101;
+}
+#cam-feed {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  transform: scaleX(-1);
+}
+#minimap-dot {
+  position: absolute;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%,-50%);
+  pointer-events: none; z-index: 102;
+  transition: left 0.08s, top 0.08s;
+}
+#cam-err {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  color: rgba(255,255,255,0.3); font-size: 9px;
+  letter-spacing: 0.06em; text-align: center; display: none;
+}
+
+/* Dots */
+#dots {
+  position: fixed; top: 30px; right: 24px;
+  display: flex; align-items: center; gap: 7px;
+  pointer-events: none; z-index: 101;
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(0,0,0,0.15); }
+.dot.on { background: rgba(0,0,0,0.72); width: 8px; height: 8px; }
+.dot.dim { background: rgba(0,0,0,0.28); }
+
+/* Back button */
+#back-btn {
+  position: fixed; bottom: 30px; left: 50%;
+  transform: translateX(-50%);
+  font-family: 'PPNeueMontreal', sans-serif;
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: rgba(0,0,0,0.32);
+  border-bottom: 1px solid rgba(0,0,0,0.12);
+  padding-bottom: 2px; cursor: pointer; z-index: 101;
+}
+#back-btn:hover { color: rgba(0,0,0,0.7); border-color: rgba(0,0,0,0.4); }
+
+/* Archive trigger */
+#archive-trigger {
+  position: fixed; bottom: 30px; right: 24px;
+  font-family: 'PPNeueMontreal', sans-serif;
+  font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(0,0,0,0.32);
+  border-bottom: 1px solid rgba(0,0,0,0.12);
+  padding-bottom: 2px; cursor: pointer; z-index: 101;
+}
+#archive-trigger:hover { color: rgba(0,0,0,0.7); }
+
+/* Hint */
+#hint {
+  position: fixed; bottom: 30px; left: 196px;
+  font-family: 'PPNeueMontreal', sans-serif;
+  font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(0,0,0,0.2);
+  pointer-events: none; z-index: 101;
+  transition: opacity 1.5s;
+}
+
+/* ── ARCHIVE LIGHTBOX ── */
+#lightbox {
+  position: fixed; inset: 0; z-index: 500;
+  display: none; flex-direction: column;
+  background: rgba(255,255,255,0.28);
+  backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+}
+#lightbox.open { display: flex; }
+
+#lb-topbar {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; z-index: 10;
+}
+#lb-counter {
+  font-family: 'PPNeueMontreal', sans-serif;
+  font-size: 10px; font-weight: 100;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: rgba(0,0,0,0.35);
+}
+#lb-close {
+  background: none; border: none; cursor: pointer;
+  font-family: 'PPNeueMontreal', sans-serif;
+  font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(0,0,0,0.32); padding: 8px;
+}
+#lb-close:hover { color: rgba(0,0,0,0.8); }
+
+#lb-stage {
+  flex: 1; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+
+#lb-center {
+  position: relative; z-index: 5;
+  display: flex; flex-direction: column; align-items: center;
+  max-width: 58%; padding-top: 52px;
+}
+#lb-center.pdf-mode { max-width: 80%; }
+
+#lb-img {
+  max-width: 100%; max-height: calc(100vh - 210px);
+  object-fit: contain; display: block;
+  transition: opacity 0.15s ease;
+}
+#lb-img.fading { opacity: 0; }
+
+#lb-video {
+  max-width: 100%; max-height: calc(100vh - 210px);
+  display: none; background: #000; outline: none;
+  transition: opacity 0.15s ease;
+}
+#lb-video.fading { opacity: 0; }
+
+/* ── PDF BOOK VIEWER ── */
+#lb-pdf-wrap {
+  display: none; flex-direction: column; align-items: center; gap: 20px; width: 100%;
+}
+#lb-pdf-wrap.active { display: flex; }
+#lb-center.pdf-mode { max-width: 82%; }
+#pdf-canvas {
+  display: block;
+  background: #fff;
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.06),
+    0 8px 30px rgba(0,0,0,0.16),
+    inset -4px 0 12px rgba(0,0,0,0.06);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+#pdf-canvas.flipping {
+  opacity: 0;
+  transform: perspective(900px) rotateY(8deg) scale(0.97);
+}
+#pdf-nav {
+  display: flex; align-items: center; gap: 24px;
+  font-family: 'PPNeueMontreal', sans-serif;
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: rgba(0,0,0,0.35);
+  user-select: none;
+}
+.pdf-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 20px; color: rgba(0,0,0,0.25);
+  padding: 6px 14px; line-height: 1; transition: color 0.15s;
+}
+.pdf-btn:hover { color: rgba(0,0,0,0.68); }
+.pdf-btn:disabled { opacity: 0.13; cursor: default; }
+
+#lb-caption {
+  margin-top: 16px;
+  font-family: 'PPNeueMontreal', sans-serif;
+  font-size: 10px; font-weight: 400;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(0,0,0,0.42); text-align: center;
+}
+
+/* Lightbox nav arrows */
+.lb-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  z-index: 20; background: none; border: none; cursor: pointer;
+  color: rgba(0,0,0,0.22); font-size: 20px; padding: 24px 18px;
+  transition: color 0.15s;
+}
+.lb-nav:hover { color: rgba(0,0,0,0.75); }
+#lb-prev { left: 18px; }
+#lb-next { right: 18px; }
+
+/* ── FILMSTRIP ── */
+#filmstrip {
+  flex-shrink: 0; height: 74px;
+  background: rgba(232,235,237,0.92);
+  border-top: 1px solid rgba(0,0,0,0.07);
+  display: flex; align-items: center;
+  gap: 4px; padding: 10px 16px;
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none;
+}
+#filmstrip::-webkit-scrollbar { display: none; }
+.fs-thumb {
+  flex: 0 0 96px; height: 54px;
+  position: relative; overflow: hidden;
+  background: rgba(0,0,0,0.06);
+  cursor: pointer; opacity: 0.45;
+  transition: opacity 0.18s;
+  border: 1px solid transparent;
+}
+.fs-thumb:hover { opacity: 0.72; }
+.fs-thumb.active { opacity: 1; border-color: rgba(0,0,0,0.45); }
+.fs-thumb img, .fs-thumb video {
+  width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none;
+}
+.fs-num {
+  position: absolute; bottom: 2px; left: 4px;
+  font-family: 'PPNeueMontreal', sans-serif;
+  font-size: 7px; color: rgba(0,0,0,0.42);
+  letter-spacing: 0.04em; pointer-events: none;
+}
+
+/* ── TEXT POPUP ── */
+#text-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.28);
+  backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+  cursor: pointer;
+}
+#text-overlay.open { display: flex; }
+#text-popup-content {
+  font-family: 'Courier New', 'Courier', monospace;
+  font-size: clamp(13px, 1.65vw, 24px);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: #111; line-height: 1.85;
+  max-width: 52%; pointer-events: none;
+  border-left: 2px solid rgba(0,0,0,0.25);
+  padding-left: 28px; text-align: left;
+}
+#text-overlay::after {
+  content: 'Click anywhere to close';
+  position: absolute; bottom: 32px; left: 50%;
+  transform: translateX(-50%);
+  font-family: 'PPNeueMontreal', sans-serif;
+  font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(0,0,0,0.22); pointer-events: none;
+}
+
+/* ── PROJECTS CAROUSEL ── */
+#projects-overlay {
+  position: fixed; inset: 0;
+  background: rgba(6,6,6,0.93);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  z-index: 700;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+#projects-overlay.open { display: flex; }
+
+#overlay-fade-top, #overlay-fade-bottom {
+  position: absolute; left: 0; right: 0;
+  pointer-events: none; z-index: 5;
+}
+#overlay-fade-top {
+  top: 0; height: 160px;
+  background: linear-gradient(to bottom, rgba(6,6,6,0.85) 0%, rgba(6,6,6,0) 100%);
+}
+#overlay-fade-bottom {
+  bottom: 0; height: 160px;
+  background: linear-gradient(to top, rgba(6,6,6,0.85) 0%, rgba(6,6,6,0) 100%);
+}
+#carousel-close {
+  position: fixed; top: 24px; right: 24px;
+  background: none; border: none; cursor: pointer;
+  font-family: 'PPNeueMontreal', sans-serif;
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  z-index: 710; display: none; transition: color 0.2s;
+}
+#carousel-close:hover { color: rgba(255,255,255,0.9); }
+#carousel-stage {
+  perspective: 1200px; perspective-origin: 50% 50%;
+  width: 100%; height: 60vh;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+#carousel-wheel {
+  transform-style: preserve-3d;
+  position: relative; width: 380px; height: 0;
+  transition: transform 0.55s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.carousel-card {
+  position: absolute; width: 380px; height: 240px;
+  cursor: pointer; margin-top: -120px;
+  overflow: hidden; transition: opacity 0.3s;
+}
+.carousel-card video {
+  width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none;
+}
+.carousel-name-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.72); opacity: 0; transition: opacity 0.22s; pointer-events: none;
+}
+.carousel-name-overlay.visible { opacity: 1; }
+.carousel-name-overlay span {
+  font-family: 'PPNeueMontreal', sans-serif;
+  font-weight: 500; font-size: 15px;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: #fff; text-align: center; padding: 0 24px;
+}
+#carousel-triangle-wrap { margin-top: 6px; pointer-events: none; }
+#carousel-triangle-img { width: 14px; height: auto; display: block; filter: invert(1); opacity: 0.5; }
+#carousel-hint {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  font-family: 'PPNeueMontreal', sans-serif;
+  font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: rgba(255,255,255,0.2); pointer-events: none;
+}
+
+</style>
+<!-- PDF.js -->
+
+</head>
+<body>
+
+<div id="canvas"></div>
+
+<!-- Top nav -->
+<div id="top-nav-gradient"></div>
+<nav id="main-nav">
+  <button class="nav-btn" onclick="openProjects()">Projects</button>
+  <img id="nav-logo" src="../Assets/Main Page/Logo.png" alt="Ctrl One" onclick="window.location.href='../index.html'">
+  <button class="nav-btn" onclick="window.location.href='../manifesto.html'">Manifesto</button>
+</nav>
+
+<!-- Projects overlay -->
+<div id="projects-overlay">
+  <div id="overlay-fade-top"></div>
+  <div id="overlay-fade-bottom"></div>
+  <div id="carousel-stage">
+    <div id="carousel-wheel"></div>
+  </div>
+  <div id="carousel-triangle-wrap">
+    <img id="carousel-triangle-img" src="../Assets/Name Tags/Project Triangle.png" alt="">
+  </div>
+  <div id="carousel-hint">Scroll to browse · Click to open</div>
+</div>
+<button id="carousel-close" onclick="closeProjects()">Close ×</button>
+
+<!-- Fixed UI -->
+<div id="axis-h"></div>
+<div id="axis-v"></div>
+
+<div id="minimap">
+  <video id="cam-feed" autoplay muted playsinline></video>
+  <div id="minimap-dot"></div>
+  <div id="cam-err">no camera</div>
+</div>
+
+<div id="dots">
+  <div class="dot on"></div><div class="dot dim"></div>
+  <div class="dot dim"></div><div class="dot dim"></div>
+  <div class="dot dim"></div><div class="dot dim"></div>
+  <div class="dot dim"></div><div class="dot dim"></div>
+  <div class="dot dim"></div>
+</div>
+
+<div id="back-btn" onclick="if(document.referrer){history.back();}else{window.location.href='../index.html';}">← Back</div>
+<div id="archive-trigger" onclick="openLightbox(0)">Archive — 021</div>
+<div id="hint">Drag to explore</div>
+
+<!-- Archive Lightbox -->
+<div id="lightbox">
+  <div id="lb-topbar">
+    <div id="lb-counter"></div>
+    <button id="lb-close" onclick="closeLightbox()">Close ×</button>
+  </div>
+  <div id="lb-stage">
+    <div id="lb-center">
+      <img id="lb-img" src="" alt="">
+      <video id="lb-video" controls></video>
+
+      <!-- PDF Flipbook -->
+      <div id="lb-pdf-wrap">
+        <canvas id="pdf-canvas"></canvas>
+        <div id="pdf-nav">
+          <button class="pdf-btn" id="pdf-prev" onclick="flipPDF(-1)">&#8592;</button>
+          <span id="pdf-counter">1 / 1</span>
+          <button class="pdf-btn" id="pdf-next" onclick="flipPDF(1)">&#8594;</button>
+        </div>
+      </div>
+
+      <div id="lb-caption"></div>
+    </div>
+    <button class="lb-nav" id="lb-prev" onclick="lbStep(-1)">&#8592;</button>
+    <button class="lb-nav" id="lb-next" onclick="lbStep(1)">&#8594;</button>
+  </div>
+  <div id="filmstrip"></div>
+</div>
+
+<!-- Text Popup -->
+<div id="text-overlay" onclick="closeTextPopup()">
+  <p id="text-popup-content"></p>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  ARCHIVE — 19 items
+// ─────────────────────────────────────────────
+const BASE = '../Assets/Projects/Narciso/';
+
+const ARCHIVE = [
+  { num:'001', title:'The Shortcut, Installed On The Home Screen',       file:'001. The Shortcut, Installed On The Home Screen.png',      type:'image' },
+  { num:'003', title:'Narcissus and his Reflection, Period Photograph',  file:'003. Narcissus and his Reflection, Period Photograph.png', type:'image' },
+  { num:'004', title:'Monkey In Pink Sunglasses',                        file:'004. Monkey In Pink Sunglasses.png',                      type:'image' },
+  { num:'005', title:'The Interruption, Front Camera Self-Portrait',     file:'005. The Interruption, Front Camera Self-Portrait.mp4',   type:'video' },
+  { num:'006', title:'The Interruption, Front Camera Self-Portrait',     file:'006. The Interruption, Front Camera Self-Portrait.MOV',   type:'video' },
+  { num:'007', title:'The Interruption, Front Camera Self-Portrait',     file:'007. The Interruption, Front Camera Self-Portrait.MOV',   type:'video' },
+  { num:'008', title:'The Interruption, Front Camera Self-Portrait',     file:'008. The Interruption, Front Camera Self-Portrait.mp4',   type:'video' },
+  { num:'009', title:'Narciso Download QR Code',                         file:'009. Narciso Download QR Code.png',                      type:'image' },
+  { num:'010', title:'Narciso Script QR Code',                           file:'010. Narciso Script QR Code.png',                        type:'image' },
+  { num:'011', title:'User Manual, Basic Operation Guide',               file:'011. User Manual, Basic Operation Guide.png',             type:'image' },
+  { num:'012', title:'Surprise!',                                        file:'012. Surprise!.png',                                     type:'image' },
+  { num:'013', title:'Front Camera',                                     file:'013. Front Camera.png',                                  type:'image' },
+  { num:'015', title:'Fortune Knocks Once',                              file:'015. Fortune Knocks Once.png',                           type:'image' },
+  { num:'016', title:'The Mirror Scene, Art Nouveau Reference',          file:'016. The Mirror Scene, Art Nouveau Reference.png',        type:'image' },
+  { num:'017', title:'Mode Selector',                                    file:'017. Mode Selector.png',                                 type:'image' },
+  { num:'018', title:'Narciso Signaling it\'s Active',                   file:'018. Narciso Signaling it\'s Active.png',                type:'image' },
+  { num:'019', title:'Focus Mode Screen, Ctrl One Activated',            file:'019. Focus Mode Screen, Ctrl One Activated.png',         type:'image' },
+  { num:'020', title:'Narciso Toggle, Widget View',                      file:'020. Narciso Toggle, Widget View.png',                   type:'image' },
+  { num:'021', title:'Narciso User Manual',                              file:'Manual/Manual_Narciso.pdf',                              type:'pdf'   },
+];
+
+function url(item) {
+  return BASE + item.file.split('').map(c => {
+    if (c === ' ')  return '%20';
+    if (c === "'")  return '%27';
+    if (c === '°')  return '%C2%B0';
+    return c;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+//  LAYOUT — hotspot positions (4536×2946 canvas)
+//  Coords derived from PIL bounding-box analysis
+//  of Layout/Narciso-N.png layer exports.
+// ─────────────────────────────────────────────
+const LAYOUT = [
+  // ── IMAGES ──────────────────────────────────────────────────────────────
+  //  archiveIdx  x      y     w     h
+  { idx:  0, x:   0, y: 106, w: 660, h:1500 }, // 001 The Shortcut — large iPhone
+  { idx: 14, x:2900, y: 140, w: 492, h:1076 }, // 017 Mode Selector (PIL from named file)
+  { idx: 13, x:1940, y: 188, w: 728, h:  460 }, // 016 The Mirror Scene, Art Nouveau Reference (PIL from named file)
+  { idx: 10, x:2116, y: 660, w: 932, h:  520 }, // 012 Surprise! — CGI face landscape (PIL from named file)
+  { idx: 18, x:1438, y: 262, w: 440, h:  846 }, // 021 User Manual PDF (booklet cover)
+  { idx: 17, x: 368, y:1388, w: 764, h:  280 }, // 020 App icon widget (Ctrl One + Narciso)
+  { idx: 11, x:3444, y: 424, w: 396, h:  872 }, // 013 Front Camera — portrait phone
+  { idx: 16, x:3356, y:1336, w: 412, h:  180 }, // 019 Focus Mode Screen, Ctrl One Activated (PIL from named file)
+  { idx: 15, x:3976, y:1540, w: 408, h:  192 }, // 018 Narciso Signaling it's Active — 5:34 screen (PIL from named file)
+  { idx:  2, x:3024, y:1588, w:1288, h:  692 }, // 004 Monkey in pink sunglasses (PIL from named file)
+  { idx:  1, x:1924, y:2036, w: 512, h:  796 }, // 003 Narcissus & Reflection (PIL from named file)
+  { idx: 12, x:1355, y:2036, w: 546, h:  799 }, // 015 Fortune Knocks Once
+  { idx:  7, x: 216, y:1876, w: 452, h:  640 }, // 009 Download QR — left card (PIL from named file)
+  { idx:  8, x: 756, y:1852, w: 492, h:  704 }, // 010 Script QR — right card (PIL from named file)
+
+  // ── TEXTS ───────────────────────────────────────────────────────────────
+  {
+    isText: true,
+    x: 3780, y: 430, w: 496, h: 420,
+    text: 'A DOWNLOADABLE SHORTCUT THAT, AT RANDOM INTERVALS, ACTIVATES THE FRONT-FACING CAMERA: IT BRINGS YOUR DISTRACTED MIND BACK TO THE BODY, INTERRUPTING THE SCROLLING WITH A SHOCK OF PRESENCE.'
+  },
+  {
+    isText: true,
+    x: 2582, y: 2350, w: 1237, h: 120,
+    text: 'THE NARCISSISTIC LOOP INTERRUPTED BY REAL NARCISSISM: SEEING YOURSELF EXACTLY AS THE ALGORITHM SEES YOU.'
+  },
+];
+
+// ─────────────────────────────────────────────
+//  CANVAS VIDEO POSITIONS  (005–008)
+//  Four "Interruption" portrait phone screens
+// ─────────────────────────────────────────────
+const CANVAS_VIDEOS = [
+  { archiveIdx: 3, x:1299, y:1249, w:383, h:848 }, // 005
+  { archiveIdx: 4, x:1731, y:1249, w:391, h:848 }, // 006
+  { archiveIdx: 5, x:2171, y:1248, w:383, h:849 }, // 007
+  { archiveIdx: 6, x:2603, y:1248, w:383, h:849 }, // 008
+];
+
+// ─────────────────────────────────────────────
+//  BUILD CANVAS
+// ─────────────────────────────────────────────
+let clickBlocked = false;
+
+function buildCanvas() {
+  const canvas = document.getElementById('canvas');
+
+  LAYOUT.forEach(pos => {
+    if (pos.isText) {
+      const hot = document.createElement('div');
+      hot.className = 'hotspot hotspot-text';
+      hot.style.cssText = `left:${pos.x}px;top:${pos.y}px;width:${pos.w}px;height:${pos.h}px;`;
+      hot.title = 'Click to read';
+      hot.addEventListener('click', () => { if (!clickBlocked) openTextPopup(pos.text); });
+      canvas.appendChild(hot);
+    } else {
+      const item = ARCHIVE[pos.idx];
+      const hot = document.createElement('div');
+      hot.className = 'hotspot';
+      hot.style.cssText = `left:${pos.x}px;top:${pos.y}px;width:${pos.w}px;height:${pos.h}px;`;
+      hot.title = item.num + '. ' + item.title;
+      hot.addEventListener('click', () => { if (!clickBlocked) openLightbox(pos.idx); });
+      canvas.appendChild(hot);
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+//  BUILD CANVAS VIDEOS  (four "Interruption" clips)
+// ─────────────────────────────────────────────
+function buildCanvasVideos() {
+  const canvas = document.getElementById('canvas');
+
+  CANVAS_VIDEOS.forEach(({ archiveIdx, x, y, w, h }) => {
+    const item = ARCHIVE[archiveIdx];
+
+    const wrap = document.createElement('div');
+    wrap.className = 'canvas-video-wrap';
+    wrap.style.cssText =
+      `left:${x}px;top:${y}px;width:${w}px;height:${h}px;` +
+      `position:absolute;overflow:hidden;cursor:pointer;`;
+    wrap.title = item.num + '. ' + item.title;
+
+    const vid = document.createElement('video');
+    vid.src         = url(item);
+    vid.muted       = true;
+    vid.loop        = true;
+    vid.autoplay    = true;
+    vid.playsInline = true;
+    vid.style.cssText =
+      'width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;';
+
+    const tryPlay = () => vid.play().catch(() => {});
+    vid.addEventListener('canplay',    tryPlay, { once: true });
+    vid.addEventListener('loadeddata', tryPlay, { once: true });
+
+    // Click = open archive lightbox (canvas video keeps playing)
+    wrap.addEventListener('click', () => {
+      if (!clickBlocked) openLightbox(archiveIdx);
+    });
+
+    wrap.appendChild(vid);
+    canvas.appendChild(wrap);
+  });
+}
+
+// ─────────────────────────────────────────────
+//  FILMSTRIP
+// ─────────────────────────────────────────────
+function buildFilmstrip() {
+  const strip = document.getElementById('filmstrip');
+  ARCHIVE.forEach((item, i) => {
+    const el = document.createElement('div');
+    el.className = 'fs-thumb';
+    el.dataset.idx = i;
+
+    if (item.type === 'video') {
+      const v = document.createElement('video');
+      v.src = url(item); v.muted = true; v.preload = 'metadata';
+      el.appendChild(v);
+    } else if (item.type === 'pdf') {
+      el.style.background = '#1b1b1b';
+      const icon = document.createElement('div');
+      icon.style.cssText =
+        'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;';
+      icon.innerHTML = `<svg width="22" height="26" viewBox="0 0 22 26" fill="none">
+        <rect x="2" y="1" width="15" height="20" rx="1.2" stroke="rgba(255,255,255,0.42)" stroke-width="1.2"/>
+        <line x1="5.5" y1="7"  x2="13.5" y2="7"  stroke="rgba(255,255,255,0.28)" stroke-width="0.9"/>
+        <line x1="5.5" y1="10" x2="13.5" y2="10" stroke="rgba(255,255,255,0.28)" stroke-width="0.9"/>
+        <line x1="5.5" y1="13" x2="11"   y2="13" stroke="rgba(255,255,255,0.28)" stroke-width="0.9"/>
+      </svg>`;
+      el.appendChild(icon);
+    } else {
+      const im = document.createElement('img');
+      im.src = url(item); im.alt = item.title;
+      el.appendChild(im);
+    }
+
+    const num = document.createElement('div');
+    num.className = 'fs-num';
+    num.textContent = item.num;
+    el.appendChild(num);
+
+    el.addEventListener('click', () => openLightbox(i));
+    strip.appendChild(el);
+  });
+}
+
+// ─────────────────────────────────────────────
+//  IMAGE PRELOADER
+// ─────────────────────────────────────────────
+const preloaded = {};
+function preloadAll() {
+  ARCHIVE.forEach(item => {
+    if (item.type === 'image') {
+      const img = new Image();
+      img.src = url(item);
+      img.decode().catch(() => {});
+      preloaded[item.num] = img;
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+//  TEXT POPUP
+// ─────────────────────────────────────────────
+function openTextPopup(text) {
+  document.getElementById('text-popup-content').textContent = text;
+  document.getElementById('text-overlay').classList.add('open');
+}
+function closeTextPopup() {
+  document.getElementById('text-overlay').classList.remove('open');
+}
+
+// ─────────────────────────────────────────────
+//  PDF BOOK VIEWER  (PDF.js 3.11 + base64 loader)
+// ─────────────────────────────────────────────
+let pdfDoc = null, pdfPage = 1, pdfRendering = false, pdfPending = null;
+
+function initPDFWorker() {
+  if (typeof pdfjsLib !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc)
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+}
+
+async function loadPDFBytes(src) {
+  const key = src.split('/').pop().replace('.pdf', '');
+  window._pdfData = window._pdfData || {};
+  if (!window._pdfData[key]) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src.replace('.pdf', '_data.js');
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+  const b64 = window._pdfData[key];
+  const bin = atob(b64);
+  const buf = new ArrayBuffer(bin.length);
+  const u8  = new Uint8Array(buf);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return buf;
+}
+
+async function openPDF(src) {
+  initPDFWorker();
+  pdfDoc = null; pdfPage = 1; pdfRendering = false; pdfPending = null;
+  document.getElementById('lb-img').style.display   = 'none';
+  document.getElementById('lb-video').style.display = 'none';
+  document.getElementById('lb-pdf-wrap').classList.add('active');
+  document.getElementById('lb-center').classList.add('pdf-mode');
+  document.getElementById('pdf-counter').textContent = 'loading…';
+  try {
+    const buf = await loadPDFBytes(src);
+    pdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
+    updatePDFCounter();
+    await renderPDFPage(1, false);
+  } catch(e) { console.error('PDF load error:', e); }
+}
+
+function closePDF() {
+  if (!document.getElementById('lb-pdf-wrap').classList.contains('active')) return;
+  document.getElementById('lb-pdf-wrap').classList.remove('active');
+  document.getElementById('lb-center').classList.remove('pdf-mode');
+  pdfDoc = null; pdfPage = 1; pdfRendering = false; pdfPending = null;
+}
+
+function updatePDFCounter() {
+  if (!pdfDoc) return;
+  document.getElementById('pdf-counter').textContent = pdfPage + ' / ' + pdfDoc.numPages;
+  document.getElementById('pdf-prev').disabled = (pdfPage <= 1);
+  document.getElementById('pdf-next').disabled = (pdfPage >= pdfDoc.numPages);
+}
+
+async function renderPDFPage(num, flip) {
+  if (!pdfDoc) return;
+  if (pdfRendering) { pdfPending = num; return; }
+  pdfRendering = true;
+  const canvas = document.getElementById('pdf-canvas');
+  if (flip) { canvas.classList.add('flipping'); await new Promise(r => setTimeout(r, 200)); }
+  const page  = await pdfDoc.getPage(num);
+  const vp0   = page.getViewport({ scale: 1 });
+  const maxW  = window.innerWidth  * 0.75;
+  const maxH  = window.innerHeight - 260;
+  const dpr   = window.devicePixelRatio || 1;
+  const scale = Math.min(maxW / vp0.width, maxH / vp0.height) * dpr;
+  const vp    = page.getViewport({ scale });
+  canvas.width  = vp.width;  canvas.height = vp.height;
+  canvas.style.width  = (vp.width  / dpr) + 'px';
+  canvas.style.height = (vp.height / dpr) + 'px';
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+  if (flip) canvas.classList.remove('flipping');
+  pdfRendering = false;
+  updatePDFCounter();
+  if (pdfPending !== null) { const p = pdfPending; pdfPending = null; renderPDFPage(p, true); }
+}
+
+async function flipPDF(dir) {
+  if (!pdfDoc || pdfRendering) return;
+  const next = pdfPage + dir;
+  if (next < 1 || next > pdfDoc.numPages) return;
+  pdfPage = next;
+  await renderPDFPage(pdfPage, true);
+}
+
+// ─────────────────────────────────────────────
+//  ARCHIVE LIGHTBOX
+// ─────────────────────────────────────────────
+let lbIdx = 0;
+let archiveView = null;
+
+function openLightbox(idx) {
+  archiveView = { x: camX, y: camY };
+  const scale  = Math.max(window.innerWidth / CW, window.innerHeight / CH);
+  const scaledW = CW * scale, scaledH = CH * scale;
+  const ox = (window.innerWidth  - scaledW) / 2;
+  const oy = (window.innerHeight - scaledH) / 2;
+  const cv = document.getElementById('canvas');
+  cv.style.transition    = 'transform 0.45s ease';
+  cv.style.transformOrigin = 'top left';
+  cv.style.transform     = `translate(${ox}px,${oy}px) scale(${scale})`;
+  lbIdx = idx;
+  document.getElementById('lightbox').classList.add('open');
+  renderLb(false);
+}
+
+function closeLightbox() {
+  const cv = document.getElementById('canvas');
+  cv.style.transition    = 'transform 0.45s ease';
+  cv.style.transformOrigin = 'top left';
+  cv.style.transform     = `translate(${archiveView.x}px,${archiveView.y}px)`;
+  setTimeout(() => { cv.style.transition = ''; archiveView = null; }, 460);
+  closePDF();
+  document.getElementById('lightbox').classList.remove('open');
+  const v = document.getElementById('lb-video');
+  v.pause(); v.src = '';
+}
+
+function lbStep(dir) {
+  lbIdx = (lbIdx + dir + ARCHIVE.length) % ARCHIVE.length;
+  renderLb(true);
+}
+
+function renderLb(fade) {
+  const item  = ARCHIVE[lbIdx];
+  const lbImg = document.getElementById('lb-img');
+  const lbVid = document.getElementById('lb-video');
+  const FADE_MS = 150;
+
+  closePDF();
+
+  document.getElementById('lb-counter').textContent =
+    item.num + ' — ' + String(ARCHIVE.length).padStart(3,'0');
+  document.getElementById('lb-caption').textContent =
+    item.num + '.  ' + item.title.toUpperCase();
+
+  lbVid.pause();
+
+  if (item.type === 'pdf') {
+    const doSwap = () => {
+      lbImg.style.display = 'none';
+      lbVid.style.display = 'none';
+      lbVid.src = '';
+      openPDF(url(item));
+    };
+    if (fade) { lbImg.classList.add('fading'); setTimeout(doSwap, FADE_MS); }
+    else doSwap();
+
+  } else if (item.type === 'video') {
+    const doSwap = () => {
+      lbImg.style.display = 'none';
+      lbVid.style.display = 'block';
+      lbVid.src = url(item);
+      lbVid.classList.remove('fading');
+      lbVid.play().catch(() => {});
+    };
+    if (fade) { lbVid.classList.add('fading'); setTimeout(doSwap, FADE_MS); }
+    else doSwap();
+
+  } else {
+    const cached = preloaded[item.num];
+    const newSrc = cached ? cached.src : url(item);
+    const decodeImg = cached || (() => {
+      const img = new Image(); img.src = newSrc;
+      preloaded[item.num] = img; return img;
+    })();
+    const decodePromise = decodeImg.decode().catch(() => {});
+
+    const doSwap = async () => {
+      lbVid.style.display = 'none';
+      lbVid.src = '';
+      lbImg.style.display = 'block';
+      lbImg.src = newSrc;
+      lbImg.alt = item.title;
+      await decodePromise;
+      lbImg.classList.remove('fading');
+    };
+    if (fade) { lbImg.classList.add('fading'); setTimeout(doSwap, FADE_MS); }
+    else doSwap();
+  }
+
+  // Filmstrip sync
+  document.querySelectorAll('.fs-thumb').forEach((el, i) => {
+    el.classList.toggle('active', i === lbIdx);
+  });
+  const activeThumb = document.querySelector('.fs-thumb.active');
+  if (activeThumb) activeThumb.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+}
+
+// Close on backdrop click
+document.getElementById('lb-stage').addEventListener('click', e => {
+  if (e.target === document.getElementById('lb-stage')) closeLightbox();
+});
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  const archiveOpen  = document.getElementById('lightbox').classList.contains('open');
+  const textOpen     = document.getElementById('text-overlay').classList.contains('open');
+  const projectsOpen = document.getElementById('projects-overlay').classList.contains('open');
+
+  if (textOpen) { if (e.key === 'Escape') closeTextPopup(); return; }
+
+  if (archiveOpen) {
+    if (e.key === 'Escape') closeLightbox();
+    if (ARCHIVE[lbIdx].type === 'pdf') {
+      if (e.key === 'ArrowLeft')  flipPDF(-1);
+      if (e.key === 'ArrowRight') flipPDF(1);
+    } else {
+      if (e.key === 'ArrowLeft')  lbStep(-1);
+      if (e.key === 'ArrowRight') lbStep(1);
+    }
+    return;
+  }
+  if (projectsOpen) {
+    if (e.key === 'Escape') { closeProjects(); return; }
+    const now = Date.now();
+    if (now - lastProjSpin < PROJ_SPIN_CD) return;
+    lastProjSpin = now;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') spinProj(1);
+    if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft')  spinProj(-1);
+    return;
+  }
+  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) e.preventDefault();
+  keys[e.key] = true;
+});
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+// ─────────────────────────────────────────────
+//  PROJECTS OVERLAY  (same 3-D carousel)
+// ─────────────────────────────────────────────
+const PROJ_CARD_BASE = '../Assets/Cards/Card%20Videos_New/';
+const spP = s => s.replace(/ /g, '%20');
+
+const PROJECTS = [
+  { id:1, name:'Narciso',           cardVideo: PROJ_CARD_BASE + 'Card_Narciso.mp4',               proyectoUrl: null },         // already here
+  { id:2, name:'Casper',cardVideo: PROJ_CARD_BASE + 'Card_Casper.mp4',                proyectoUrl: 'casper.html'   },
+  { id:3, name:'3ª Persona',        cardVideo: PROJ_CARD_BASE + 'Card_3rdPerson.mp4',             proyectoUrl: '3rdperson.html' },
+  { id:4, name:'Human Battery',    cardVideo: PROJ_CARD_BASE + 'Card_HumanBattery.mp4',          proyectoUrl: 'humanbattery.html' },
+  { id:5, name:'Butter Bun',           cardVideo: PROJ_CARD_BASE + 'Card_ButterBun.mp4',                 proyectoUrl: 'butterbun.html' },
+  { id:6, name:'UFO',               cardVideo: PROJ_CARD_BASE + 'Card_UFO.mp4',                   proyectoUrl: 'ufo.html'      },
+  { id:7, name:'Atalaya',           cardVideo: PROJ_CARD_BASE + 'Card_Atalaya.mp4',                   proyectoUrl: 'atalaya.html' },
+  { id:8, name:'Two Toilets',      cardVideo: PROJ_CARD_BASE + spP('Card_TwoToilets.mp4'),       proyectoUrl: 'twotoilets.html' },
+];
+
+const PROJ_N    = PROJECTS.length;
+const PROJ_STEP = 360 / PROJ_N;
+const PROJ_R    = Math.round((240 / 2) / Math.tan(Math.PI / PROJ_N)) + 90;
+
+let projIdx      = 0;             // Narciso at front
+let projRotation = 0 * -PROJ_STEP;
+let projBuilt    = false;
+
+function buildProjectCarousel() {
+  if (projBuilt) return;
+  projBuilt = true;
+  const wheel = document.getElementById('carousel-wheel');
+  PROJECTS.forEach((proj, i) => {
+    const card = document.createElement('div');
+    card.className = 'carousel-card';
+    card.dataset.idx = i;
+    card.style.transform = `rotateX(${i * PROJ_STEP}deg) translateZ(${PROJ_R}px)`;
+
+    const vid = document.createElement('video');
+    vid.src = proj.cardVideo;
+    vid.muted = true; vid.loop = true; vid.playsInline = true; vid.autoplay = true;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'carousel-name-overlay';
+    const span = document.createElement('span');
+    span.textContent = proj.name.toUpperCase();
+    overlay.appendChild(span);
+
+    card.appendChild(vid); card.appendChild(overlay);
+
+    card.addEventListener('mouseenter', () => { overlay.classList.add('visible'); });
+    card.addEventListener('mouseleave', () => { overlay.classList.remove('visible'); });
+    card.addEventListener('click', () => {
+      if (proj.proyectoUrl === null) { closeProjects(); return; }
+      if (proj.proyectoUrl) window.location.href = proj.proyectoUrl;
+    });
+    card.addEventListener('wheel', e => e.stopPropagation());
+    wheel.appendChild(card);
+  });
+  document.getElementById('carousel-wheel').style.transform = `rotateX(${projRotation}deg)`;
+  updateProjFront();
+}
+
+function spinProj(dir) {
+  projIdx = (projIdx + dir + PROJ_N) % PROJ_N;
+  projRotation -= dir * PROJ_STEP;
+  document.getElementById('carousel-wheel').style.transform = `rotateX(${projRotation}deg)`;
+  updateProjFront();
+}
+
+function updateProjFront() {
+  document.querySelectorAll('.carousel-card').forEach((card, i) => {
+    const front = (i === projIdx);
+    card.classList.toggle('is-front', front);
+    const diff = ((i - projIdx) % PROJ_N + PROJ_N) % PROJ_N;
+    const dist = diff > PROJ_N / 2 ? PROJ_N - diff : diff;
+    card.style.opacity = dist < PROJ_N / 4 ? '1' : '0';
+    if (!front) {
+      const v = card.querySelector('video');
+      if (v) { v.pause(); v.currentTime = 0; }
+      const ov = card.querySelector('.carousel-name-overlay');
+      if (ov) ov.classList.remove('visible');
+    }
+  });
+}
+
+function openProjects() {
+  buildProjectCarousel();
+  document.getElementById('projects-overlay').classList.add('open');
+  document.getElementById('carousel-close').style.display = 'block';
+}
+
+function closeProjects() {
+  document.getElementById('projects-overlay').classList.remove('open');
+  document.getElementById('carousel-close').style.display = 'none';
+  document.querySelectorAll('.carousel-card video').forEach(v => {
+    v.pause(); v.currentTime = 0;
+  });
+}
+
+let lastProjSpin = 0;
+const PROJ_SPIN_CD = 650;
+document.getElementById('projects-overlay').addEventListener('wheel', e => {
+  e.preventDefault();
+  const now = Date.now();
+  if (now - lastProjSpin < PROJ_SPIN_CD) return;
+  lastProjSpin = now;
+  spinProj(e.deltaY > 0 ? -1 : 1);
+}, { passive: false });
+
+// ─────────────────────────────────────────────
+//  PANNING
+// ─────────────────────────────────────────────
+const CW = 4536, CH = 2946;
+let isDrag = false, startX, startY, camX = 0, camY = 0, dragDist = 0;
+
+window.addEventListener('load', () => {
+  camX = -80; camY = -80;
+  applyTransform();
+  buildCanvas();
+  buildCanvasVideos();
+  buildFilmstrip();
+  preloadAll();
+
+  setTimeout(() => {
+    const h = document.getElementById('hint');
+    if (h) h.style.opacity = '0';
+  }, 3000);
+  setTimeout(() => {
+    const h = document.getElementById('hint');
+    if (h) h.style.display = 'none';
+  }, 4500);
+
+  const feed = document.getElementById('cam-feed');
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+    .then(s => { feed.srcObject = s; })
+    .catch(() => {
+      feed.style.display = 'none';
+      document.getElementById('cam-err').style.display = 'block';
+    });
+});
+
+function clamp(v, lo, hi) { return Math.min(Math.max(v, lo), hi); }
+
+function applyTransform() {
+  if (archiveView) return;
+  camX = clamp(camX, -(CW - window.innerWidth),  0);
+  camY = clamp(camY, -(CH - window.innerHeight), 0);
+  document.getElementById('canvas').style.transform = `translate(${camX}px,${camY}px)`;
+  updateMinimap();
+}
+
+function updateMinimap() {
+  if (archiveView) return;
+  const box = document.getElementById('minimap');
+  const dot = document.getElementById('minimap-dot');
+  dot.style.left = ((-camX / CW) * box.offsetWidth)  + 'px';
+  dot.style.top  = ((-camY / CH) * box.offsetHeight) + 'px';
+}
+
+// Mouse panning
+document.addEventListener('mousedown', e => {
+  if (document.getElementById('lightbox').classList.contains('open')) return;
+  if (document.getElementById('text-overlay').classList.contains('open')) return;
+  if (e.target.closest('#minimap') || e.target.closest('#back-btn') ||
+      e.target.closest('#archive-trigger')) return;
+  isDrag = true; dragDist = 0; clickBlocked = false;
+  startX = e.clientX - camX;
+  startY = e.clientY - camY;
+  document.body.classList.add('dragging');
+});
+document.addEventListener('mousemove', e => {
+  if (!isDrag) return;
+  const dx = e.clientX - (startX + camX);
+  const dy = e.clientY - (startY + camY);
+  dragDist += Math.abs(dx) + Math.abs(dy);
+  if (dragDist > 4) clickBlocked = true;
+  camX = e.clientX - startX;
+  camY = e.clientY - startY;
+  applyTransform();
+});
+document.addEventListener('mouseup', () => {
+  isDrag = false;
+  document.body.classList.remove('dragging');
+  setTimeout(() => { clickBlocked = false; }, 80);
+});
+
+// Touch panning
+document.addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  isDrag = true; dragDist = 0; clickBlocked = false;
+  startX = t.clientX - camX;
+  startY = t.clientY - camY;
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (!isDrag) return;
+  const t = e.touches[0];
+  dragDist += 10; clickBlocked = true;
+  camX = t.clientX - startX;
+  camY = t.clientY - startY;
+  applyTransform();
+}, { passive: true });
+document.addEventListener('touchend', () => {
+  isDrag = false;
+  setTimeout(() => { clickBlocked = false; }, 80);
+});
+
+// Trackpad / scroll wheel panning
+document.addEventListener('wheel', e => {
+  if (document.getElementById('lightbox').classList.contains('open')) return;
+  if (document.getElementById('text-overlay').classList.contains('open')) return;
+  if (document.getElementById('projects-overlay').classList.contains('open')) return;
+  if (e.ctrlKey) return;
+  e.preventDefault();
+  camX -= e.deltaX;
+  camY -= e.deltaY;
+  applyTransform();
+}, { passive: false });
+
+// Keyboard panning
+const keys = {};
+const KS = 42;
+(function keyLoop() {
+  if (!document.getElementById('lightbox').classList.contains('open') &&
+      !document.getElementById('text-overlay').classList.contains('open')) {
+    if (keys['ArrowLeft'])  camX += KS;
+    if (keys['ArrowRight']) camX -= KS;
+    if (keys['ArrowUp'])    camY += KS;
+    if (keys['ArrowDown'])  camY -= KS;
+    if (Object.values(keys).some(Boolean)) applyTransform();
+  }
+  requestAnimationFrame(keyLoop);
+})();
+</script>
+</body>
+</html>
