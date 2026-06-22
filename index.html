@@ -557,26 +557,30 @@ function buildCarousel() {
     wheel.appendChild(card);
   });
 
-  // Hover detection via geometry instead of per-card mouse events,
-  // which are unreliable with CSS preserve-3d transforms.
+  // Hover detection via geometry — track last mouse position so we can
+  // re-evaluate after a spin without needing the user to move the mouse.
   const stage = document.getElementById('carousel-stage');
-  let _frontHovered = false;
-  function _setFrontHover(on) {
-    if (on === _frontHovered) return;
-    _frontHovered = on;
-    const front = document.querySelector('.carousel-card.is-front');
-    if (!front) return;
-    const v = front.querySelector('video');
-    const ov = front.querySelector('.carousel-name-overlay');
-    if (on) { v.play().catch(() => {}); ov.classList.add('visible'); }
-    else { v.pause(); v.currentTime = 0; ov.classList.remove('visible'); }
-  }
-  stage.addEventListener('mousemove', (e) => {
+  let _mouseX = -9999, _mouseY = -9999;
+  function _checkFrontHover() {
     const r = stage.getBoundingClientRect();
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-    _setFrontHover(Math.abs(e.clientX - cx) < 190 && Math.abs(e.clientY - cy) < 120);
+    const on = Math.abs(_mouseX - cx) < 190 && Math.abs(_mouseY - cy) < 120;
+    const front = document.querySelector('.carousel-card.is-front');
+    if (!front) return;
+    const ov = front.querySelector('.carousel-name-overlay');
+    if (on) ov.classList.add('visible');
+    else ov.classList.remove('visible');
+  }
+  stage.addEventListener('mousemove', (e) => {
+    _mouseX = e.clientX; _mouseY = e.clientY;
+    _checkFrontHover();
   });
-  stage.addEventListener('mouseleave', () => _setFrontHover(false));
+  stage.addEventListener('mouseleave', () => {
+    _mouseX = -9999; _mouseY = -9999;
+    const front = document.querySelector('.carousel-card.is-front');
+    if (front) front.querySelector('.carousel-name-overlay').classList.remove('visible');
+  });
+  window._checkCarouselHover = _checkFrontHover;
 
   updateCarouselFront();
 }
@@ -605,13 +609,16 @@ function updateCarouselFront() {
     card.style.opacity = visible ? '1' : '0';
     card.style.pointerEvents = visible ? '' : 'none';
 
-    if (!front) {
-      const v = card.querySelector('video');
+    const v = card.querySelector('video');
+    if (front) {
+      if (v) v.play().catch(() => {});
+    } else {
       if (v) { v.pause(); v.currentTime = 0; }
       const ov = card.querySelector('.carousel-name-overlay');
       if (ov) ov.classList.remove('visible');
     }
   });
+  if (window._checkCarouselHover) window._checkCarouselHover();
 }
 
 function openProjects() {
