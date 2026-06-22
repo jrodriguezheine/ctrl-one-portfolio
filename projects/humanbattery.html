@@ -930,7 +930,7 @@ const spP = s => s.replace(/ /g, '%20');
 const PROJECTS = [
   { id:1, name:'Narciso',            cardVideo: PROJ_CARD_BASE + 'Card_Narciso.mp4',           proyectoUrl: 'narciso.html'  },
   { id:2, name:'Casper', cardVideo: PROJ_CARD_BASE + 'Card_Casper.mp4',            proyectoUrl: 'casper.html'   },
-  { id:3, name:'3ª Persona',         cardVideo: PROJ_CARD_BASE + 'Card_3rdPerson.mp4',         proyectoUrl: '3rdperson.html' },
+  { id:3, name:'3rd Person',         cardVideo: PROJ_CARD_BASE + 'Card_3rdPerson.mp4',         proyectoUrl: '3rdperson.html' },
   { id:4, name:'Human Battery',     cardVideo: PROJ_CARD_BASE + 'Card_HumanBattery.mp4',      proyectoUrl: null            }, // already here
   { id:5, name:'Butter Bun',           cardVideo: PROJ_CARD_BASE + 'Card_ButterBun.mp4',                 proyectoUrl: 'butterbun.html' },
   { id:6, name:'UFO',                cardVideo: PROJ_CARD_BASE + 'Card_UFO.mp4',               proyectoUrl: 'ufo.html'      },
@@ -986,10 +986,11 @@ function buildProjectCarousel() {
   document.getElementById('carousel-stage').appendChild(clickZone);
 
   const stage = document.getElementById('carousel-stage');
-  let _frontHovered = false;
-  function _setFrontHover(on) {
-    if (on === _frontHovered) return;
-    _frontHovered = on;
+  let _mouseX = -9999, _mouseY = -9999;
+  function _checkProjHover() {
+    const r = stage.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const on = Math.abs(_mouseX - cx) < 190 && Math.abs(_mouseY - cy) < 120;
     const front = document.querySelector('.carousel-card.is-front');
     if (!front) return;
     const ov = front.querySelector('.carousel-name-overlay');
@@ -997,11 +998,15 @@ function buildProjectCarousel() {
     else ov.classList.remove('visible');
   }
   stage.addEventListener('mousemove', (e) => {
-    const r = stage.getBoundingClientRect();
-    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-    _setFrontHover(Math.abs(e.clientX - cx) < 190 && Math.abs(e.clientY - cy) < 120);
+    _mouseX = e.clientX; _mouseY = e.clientY;
+    _checkProjHover();
   });
-  stage.addEventListener('mouseleave', () => _setFrontHover(false));
+  stage.addEventListener('mouseleave', () => {
+    _mouseX = -9999; _mouseY = -9999;
+    const front = document.querySelector('.carousel-card.is-front');
+    if (front) front.querySelector('.carousel-name-overlay').classList.remove('visible');
+  });
+  window._checkProjHover = _checkProjHover;
 
   updateProjFront();
 }
@@ -1032,6 +1037,7 @@ function updateProjFront() {
       if (v) v.play().catch(() => {});
     }
   });
+  if (window._checkProjHover) window._checkProjHover();
 }
 
 function openProjects() {
