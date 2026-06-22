@@ -1089,6 +1089,10 @@ function closeProjects() {
 
 let lastProjSpin = 0;
 const PROJ_SPIN_CD = 650;
+document.getElementById('projects-overlay').addEventListener('click', e => {
+  if (!e.target.closest('#carousel-stage')) closeProjects();
+});
+
 document.getElementById('projects-overlay').addEventListener('wheel', e => {
   e.preventDefault();
   const now = Date.now();
