@@ -357,8 +357,11 @@ body.dragging { cursor: grabbing; }
 }
 #lb-pdf-wrap.active { display: flex; }
 #lb-center.pdf-mode { max-width: 82%; }
-#pdf-canvas {
+#flipbook-img {
   display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 260px);
+  object-fit: contain;
   background: #fff;
   box-shadow:
     0 2px 4px rgba(0,0,0,0.06),
@@ -366,7 +369,7 @@ body.dragging { cursor: grabbing; }
     inset -4px 0 12px rgba(0,0,0,0.06);
   transition: opacity 0.18s ease, transform 0.18s ease;
 }
-#pdf-canvas.flipping {
+#flipbook-img.flipping {
   opacity: 0;
   transform: perspective(900px) rotateY(8deg) scale(0.97);
 }
@@ -1247,6 +1250,9 @@ const KS = 42;
   }
   requestAnimationFrame(keyLoop);
 })();
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) { closeProjects(); closeLightbox(); }
+});
 </script>
 </body>
 </html>

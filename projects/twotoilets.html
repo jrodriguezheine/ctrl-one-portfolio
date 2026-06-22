@@ -1197,6 +1197,9 @@ const KS = 42;
   }
   requestAnimationFrame(keyLoop);
 })();
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) { closeProjects(); closeLightbox(); }
+});
 </script>
 </body>
 </html>
